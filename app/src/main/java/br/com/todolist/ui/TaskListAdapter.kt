@@ -25,8 +25,6 @@ class TaskListAdapter : ListAdapter<Task, TaskListAdapter.TaskViewHolder>(DiffCa
         holder.bind(getItem(position))
     }
 
-    // Colocar inner na classe faz com que seja possivel acessar os
-    // atributos da classe principal
     inner class TaskViewHolder(
         private val binding: ItemTaskBinding
         ) : RecyclerView.ViewHolder(binding.root) {
@@ -37,6 +35,7 @@ class TaskListAdapter : ListAdapter<Task, TaskListAdapter.TaskViewHolder>(DiffCa
                 showPopup(item)
             }
         }
+
         private fun showPopup(item: Task) {
             val ivMore = binding.ivMore
             val popupMenu = PopupMenu(ivMore.context, ivMore)
@@ -51,10 +50,9 @@ class TaskListAdapter : ListAdapter<Task, TaskListAdapter.TaskViewHolder>(DiffCa
             popupMenu.show()
         }
     }
-
 }
 
 class DiffCallback : DiffUtil.ItemCallback<Task>() {
     override fun areItemsTheSame(oldItem: Task, newItem: Task): Boolean = oldItem == newItem
-    override fun areContentsTheSame(oldItem: Task, newItem: Task): Boolean = oldItem.id == newItem.id
+    override fun areContentsTheSame(oldItem: Task, newItem: Task): Boolean = oldItem.uid == newItem.uid
 }

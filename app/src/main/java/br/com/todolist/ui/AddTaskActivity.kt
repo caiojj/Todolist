@@ -1,11 +1,9 @@
 package br.com.todolist.ui
 
-import android.app.Activity
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import br.com.todolist.R
 import br.com.todolist.databinding.ActivityAddTaskBinding
-import br.com.todolist.datasource.TaskDataSource
 import br.com.todolist.datasource.model.Task
 import br.com.todolist.extensions.format
 import br.com.todolist.extensions.text
@@ -16,7 +14,12 @@ import java.util.*
 
 class AddTaskActivity : AppCompatActivity() {
 
+    companion object {
+        const val TASK = "task"
+    }
+    private var uid: Int = 0
     private lateinit var binding: ActivityAddTaskBinding
+    private var edit = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,15 +27,17 @@ class AddTaskActivity : AppCompatActivity() {
         binding = ActivityAddTaskBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        if(intent.hasExtra(TASK_ID)) {
-            val taskId = intent.getIntExtra(TASK_ID, 0)
-            TaskDataSource.findById(taskId).let {
-                binding.titTitle.text = it!!.title
-                binding.tilDate.text = it!!.date
-                binding.tilHour.text = it!!.hour
+        if(intent.hasExtra(TASK)) {
+            val task = intent.getSerializableExtra(TASK) as Task
+            task.let {
+                binding.titTitle.text = it.title
+                binding.tilDate.text = it.date
+                binding.tilHour.text = it.hour
+                binding.btnNewTask.text = getString(R.string.salvar)
+                edit = true
+                uid = it.uid
             }
         }
-
         insertListeners()
     }
 
@@ -66,18 +71,18 @@ class AddTaskActivity : AppCompatActivity() {
 
         binding.btnNewTask.setOnClickListener {
             val task = Task(
-                title = binding.titTitle.text,
-                date = binding.tilDate.text,
+                uid = uid,
+                title =  binding.titTitle.text,
                 hour = binding.tilHour.text,
-                id = intent.getIntExtra(TASK_ID, 0)
+                date = binding.tilDate.text
             )
-            TaskDataSource.insertTask(task)
-            setResult(Activity.RESULT_OK)
+
+            if(edit) {
+                MainActivity.viewModel.update(task)
+            } else {
+                MainActivity.viewModel.insert(task)
+            }
             finish()
         }
-    }
-
-    companion object {
-        const val TASK_ID = "task_id"
     }
 }

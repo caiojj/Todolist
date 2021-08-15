@@ -1,23 +1,17 @@
 package br.com.todolist.datasource.model
 
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import java.io.Serializable
+
+
+@Entity
 data class Task(
-    val title: String,
-    val hour: String,
-    val date: String,
-    val id: Int = 0
-) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
 
-        other as Task
+    @PrimaryKey(autoGenerate = true) val uid: Int,
+    @ColumnInfo(name = "title") val title: String,
+    @ColumnInfo(name = "hour") val hour: String,
+    @ColumnInfo(name = "date") val date: String
 
-        if (id != other.id) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        return id
-    }
-}
+) : Serializable

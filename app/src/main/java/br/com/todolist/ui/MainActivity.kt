@@ -1,18 +1,23 @@
 package br.com.todolist.ui
-
-import android.app.Activity
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import br.com.todolist.R
 import br.com.todolist.databinding.ActivityMainBinding
-import br.com.todolist.datasource.TaskDataSource
+import br.com.todolist.datasource.model.Task
+import br.com.todolist.datasource.viewModel.MainViewModel
+import br.com.todolist.datasource.viewModel.TaskState
 
 class MainActivity : AppCompatActivity() {
 
     lateinit var binding: ActivityMainBinding
     private val adapter by lazy { TaskListAdapter() }
+
+    companion object {
+        val viewModel by lazy { MainViewModel() }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,41 +29,55 @@ class MainActivity : AppCompatActivity() {
         binding.rvTasks.adapter = adapter
 
         insertListeners()
+
+        viewModel.getTaks()
+
+        observer()
+    }
+
+    private fun observer() {
+        viewModel.tasks.observe(this) { taskState ->
+            when(taskState) {
+                is TaskState.SuccessGet -> {
+                    val list = taskState.tasks
+                    adapter.submitList(list)
+                    isEmptyTask(list)
+                }
+                is TaskState.SuccessDelete -> viewModel.getTaks()
+                is TaskState.SuccessUpdate -> {
+                    viewModel.getTaks()
+                    Toast
+                        .makeText(this, "Tarefa editada", Toast.LENGTH_SHORT)
+                        .show()
+                }
+                is TaskState.SuccessInsert -> {
+                    viewModel.getTaks()
+                    Toast
+                        .makeText(this, "Tarefa adicinada", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+        }
     }
 
     private fun insertListeners() {
         binding.btnAdd.setOnClickListener {
-            startActivityForResult(Intent(this, AddTaskActivity::class.java), CREATE_NEW_TASK)
+            val intent = Intent(this, AddTaskActivity::class.java)
+            startActivity(intent)
         }
 
         adapter.listenerEdit = {
             val intent = Intent(this, AddTaskActivity::class.java)
-            intent.putExtra(AddTaskActivity.TASK_ID, it.id)
-            startActivityForResult(intent, CREATE_NEW_TASK)
+            intent.putExtra(AddTaskActivity.TASK, it)
+            startActivity(intent)
         }
 
         adapter.listenerDelet = {
-            TaskDataSource.deleteTask(it);
-            updateList()
+            viewModel.delete(it)
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if(requestCode == CREATE_NEW_TASK && resultCode == Activity.RESULT_OK) {
-            binding.rvTasks.adapter = adapter
-            adapter.submitList(TaskDataSource.getList())
-            updateList()
-        }
-    }
-
-    private fun updateList() {
-        val list = TaskDataSource.getList()
-        adapter.submitList(list)
-        binding.includEmpty.layoutEmpty.visibility = if(list.isEmpty()) View.VISIBLE else View.GONE
-    }
-
-    companion object {
-        private const val CREATE_NEW_TASK = 100
+    private fun isEmptyTask(list: List<Task>?) {
+        binding.includEmpty.layoutEmpty.visibility = if(list?.isEmpty() == true) View.VISIBLE else View.GONE
     }
 }
